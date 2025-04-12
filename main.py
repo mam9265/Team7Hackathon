@@ -71,7 +71,7 @@ def main():
         glove_positions = []
         glove_gestures = []
         
-        # Process gestures if game is in playing state
+       # Process gestures if game is in playing state
         if game.game_state == "playing":
             for i, lm_list in enumerate(hands):
                 if lm_list:
@@ -81,6 +81,7 @@ def main():
                     
                     # Register player action if we have a valid gesture and quadrant
                     if gesture is not None and quadrant is not None:
+                        # Use the game's register_player_action method which now includes the delay validation
                         game.register_player_action(quadrant, gesture)
                     
                     # Draw current gesture for debugging
@@ -102,9 +103,13 @@ def main():
                     # Add placeholders if hand not detected
                     glove_positions.append(None)
                     glove_gestures.append(None)
-                    
-        # Update the viewer with current hand data
-        viewer.update_glove_data(glove_positions, glove_gestures)
+        
+        # Use frozen gesture data if round has ended
+        if game.game_state == "round_end" and game.frozen_gestures:
+            viewer.update_glove_data(game.frozen_positions, game.frozen_gestures, display_duration=5)
+        else:
+            # Update the viewer with current hand data
+            viewer.update_glove_data(glove_positions, glove_gestures)
         
         # Draw player actions
         img = ui.draw_player_actions(img, game.player_actions, game.player_quadrants)

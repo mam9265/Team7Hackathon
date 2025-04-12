@@ -31,6 +31,13 @@ class BoxingViewer:
         self.glove_positions = []
         self.glove_gestures = []
         
+        # For freezing gestures
+        self.is_frozen = False
+        self.freeze_time = 0
+        self.freeze_duration = 0
+        self.frozen_positions = []
+        self.frozen_gestures = []
+        
         # Mike Tyson sprite (create a placeholder for now)
         self.tyson_sprite = self._create_tyson_sprite()
         
@@ -156,7 +163,18 @@ class BoxingViewer:
         Draw boxing gloves based on current positions and gestures
         """
         with self.lock:
-            for i, (pos, gesture) in enumerate(zip(self.glove_positions, self.glove_gestures)):
+            # Use frozen or regular positions/gestures
+            positions = self.frozen_positions if self.is_frozen else self.glove_positions
+            gestures = self.frozen_gestures if self.is_frozen else self.glove_gestures
+            
+            # If frozen, display a message about the frozen state
+            if self.is_frozen:
+                remaining = int(self.freeze_duration - (time.time() - self.freeze_time))
+                if remaining > 0:
+                    cv2.putText(self.canvas, f"Final Gestures ({remaining}s)", 
+                               (self.width//2 - 120, 50), self.font, 0.8, self.YELLOW, 2)
+            
+            for i, (pos, gesture) in enumerate(zip(positions, gestures)):
                 if pos is None or gesture is None:
                     continue
                 
@@ -210,15 +228,32 @@ class BoxingViewer:
                         cv2.circle(self.canvas, finger_pos, 15, color, -1)
                         cv2.circle(self.canvas, finger_pos, 15, self.BLACK, 2)
     
-    def update_glove_data(self, positions, gestures):
+    def update_glove_data(self, positions, gestures, display_duration=None):
         """
         Update the glove positions and gestures
         positions: List of (x, y) tuples for glove positions
         gestures: List of gesture strings ("rock", "paper", "scissors", or None)
+        display_duration: Optional time in seconds to keep this gesture displayed
         """
         with self.lock:
-            self.glove_positions = positions
-            self.glove_gestures = gestures
+            # Store current time if we want to freeze this gesture
+            if display_duration:
+                self.freeze_time = time.time()
+                self.freeze_duration = display_duration
+                self.frozen_positions = positions.copy() if positions else []
+                self.frozen_gestures = gestures.copy() if gestures else []
+                self.is_frozen = True
+            elif hasattr(self, 'is_frozen') and self.is_frozen:
+                # Check if we should unfreeze
+                if time.time() - self.freeze_time >= self.freeze_duration:
+                    self.is_frozen = False
+                    self.glove_positions = positions
+                    self.glove_gestures = gestures
+                # Otherwise keep using the frozen positions/gestures
+            else:
+                # Normal update
+                self.glove_positions = positions
+                self.glove_gestures = gestures
     
     def start(self):
         """

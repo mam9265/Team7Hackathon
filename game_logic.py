@@ -21,6 +21,10 @@ class BoxingGame:
         self.countdown_start = 0
         self.round_end_time = 0
         
+        # Gesture stability tracking
+        self.gesture_history = {}  # {quadrant: [(gesture, timestamp)]}
+        self.stable_gesture_time = 1.0  # Time in seconds a gesture must be stable
+        
         # Action tracking for current round
         self.player_actions = {0: None, 1: None, 2: None, 3: None}  # Quadrant: Gesture
         self.computer_actions = {0: None, 1: None, 2: None, 3: None}  # Quadrant: Gesture
@@ -71,23 +75,57 @@ class BoxingGame:
     
     def register_player_action(self, quadrant, gesture):
         """
-        Register a player's action in a specific quadrant
+        Register a player's action in a specific quadrant after ensuring gesture stability
         """
         if self.game_state == "playing" and gesture is not None:
-            self.player_actions[quadrant] = gesture
+            current_time = time.time()
             
-            # Add to player quadrants if not already there
-            if quadrant not in self.player_quadrants and len(self.player_quadrants) < 2:
-                self.player_quadrants.append(quadrant)
+            # Initialize history for this quadrant if it doesn't exist
+            if quadrant not in self.gesture_history:
+                self.gesture_history[quadrant] = []
+            
+            # Add the current gesture with timestamp
+            self.gesture_history[quadrant].append((gesture, current_time))
+            
+            # Clean up old entries (older than 1.5 seconds)
+            self.gesture_history[quadrant] = [
+                (g, t) for g, t in self.gesture_history[quadrant] 
+                if current_time - t < 1.5
+            ]
+            
+            # Check if the gesture has been stable for the required time
+            if len(self.gesture_history[quadrant]) >= 2:
+                # Get all gestures in the last second
+                recent_gestures = [
+                    g for g, t in self.gesture_history[quadrant] 
+                    if current_time - t <= self.stable_gesture_time
+                ]
                 
-            # Check if we have 2 player actions to resolve the round
-            if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
-                self.resolve_round()
+                # Check if all recent gestures are the same
+                if len(recent_gestures) >= 2 and all(g == gesture for g in recent_gestures):
+                    # If the gesture has been stable for 1 second, register it
+                    if quadrant in self.player_quadrants and self.player_actions[quadrant] == gesture:
+                        # Already registered this gesture for this quadrant
+                        pass
+                    else:
+                        self.player_actions[quadrant] = gesture
+                        
+                        # Add to player quadrants if not already there
+                        if quadrant not in self.player_quadrants and len(self.player_quadrants) < 2:
+                            self.player_quadrants.append(quadrant)
+                        
+                        # Check if we have 2 player actions to resolve the round
+                        if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
+                            self.resolve_round()
     
     def resolve_round(self):
         """
         Resolve the current round based on player and computer actions
         """
+        # Save current gesture data for the viewer to display for 5 seconds
+        self.frozen_gestures = [] 
+        self.frozen_positions = []
+        
         player_damage = 0
         computer_damage = 0
         
@@ -137,6 +175,9 @@ class BoxingGame:
             # Set timer for round end
             self.game_state = "round_end"
             self.round_end_time = time.time()
+        
+            # Store final gestures and positions for freezing in the viewer
+            self.frozen_gestures = True  
     
     def update_round_end(self):
         """
@@ -177,7 +218,9 @@ class BoxingGame:
         """
         Reset the entire game
         """
+        old_stable_time = self.stable_gesture_time  # Save the stable time setting
         self.__init__()
+        self.stable_gesture_time = old_stable_time  # Restore the stable time setting
     
     def determine_winner(self, player_gesture, computer_gesture):
         """
