@@ -100,50 +100,56 @@ class BoxingGame:
     
     def register_player_action(self, quadrant, gesture):
         """
-        Register a player's action in a specific quadrant after ensuring gesture stability
+        Register a stable gesture if it's consistently detected.
+        Unregister the gesture if it hasn't been updated in over 0.5 seconds.
         """
-        if self.game_state == "playing" and gesture is not None:
-            current_time = time.time()
-            
-            # Initialize history for this quadrant if it doesn't exist
-            if quadrant not in self.gesture_history:
-                self.gesture_history[quadrant] = []
-            
-            # Add the current gesture with timestamp
-            self.gesture_history[quadrant].append((gesture, current_time))
-            
-            # Clean up old entries (older than 1.5 seconds)
-            self.gesture_history[quadrant] = [
-                (g, t) for g, t in self.gesture_history[quadrant] 
-                if current_time - t < 1.5
-            ]
-            
-            # Check if the gesture has been stable for the required time
-            if len(self.gesture_history[quadrant]) >= 1:
-                # Get all gestures in the last second
-                recent_gestures = [
-                    g for g, t in self.gesture_history[quadrant] 
-                    if current_time - t <= self.stable_gesture_time
-                ]
-                
-                # Check if all recent gestures are the same
-                if len(recent_gestures) >= 2 and all(g == gesture for g in recent_gestures):
-                    # If the gesture has been stable for 1 second, register it
-                    if quadrant in self.player_quadrants and self.player_actions[quadrant] == gesture:
-                        # Already registered this gesture for this quadrant
-                        pass
-                    else:
-                        self.player_actions[quadrant] = gesture
-                        
-                        # Add to player quadrants if not already there
-                        if quadrant not in self.player_quadrants and len(self.player_quadrants) < 2:
-                            self.player_quadrants.append(quadrant)
-                            ##add time wait here
-                        
-                        # Check if we have 2 player actions to resolve the exchange
-                        if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
+        current_time = time.time()
 
-                            self.resolve_exchange()
+        # Initialize gesture history if it doesn't exist
+        if quadrant not in self.gesture_history:
+            self.gesture_history[quadrant] = []
+
+        # Append current gesture with timestamp
+        if gesture is not None:
+            self.gesture_history[quadrant].append((gesture, current_time))
+
+        # Remove old history beyond 1.5 seconds
+        self.gesture_history[quadrant] = [
+            (g, t) for g, t in self.gesture_history[quadrant] if current_time - t < 0.1
+        ]
+
+        # If the latest gesture update is older than 0.5 seconds, unregister it
+        if self.gesture_history[quadrant]:
+            last_gesture_time = self.gesture_history[quadrant][-1][1]
+            if current_time - last_gesture_time > 0.1:
+                self.gesture_history[quadrant] = []
+                self.player_actions[quadrant] = None
+                if quadrant in self.player_quadrants:
+                    self.player_quadrants.remove(quadrant)
+                return
+        else:
+            # No recent gesture data at all
+            self.player_actions[quadrant] = None
+            if quadrant in self.player_quadrants:
+                self.player_quadrants.remove(quadrant)
+            return
+
+        # Check for stability in the last second
+        recent_gestures = [
+            g for g, t in self.gesture_history[quadrant]
+            if current_time - t <= self.stable_gesture_time
+        ]
+
+        # If the same gesture has been seen consistently, register it
+        if len(recent_gestures) >= 2 and all(g == recent_gestures[0] for g in recent_gestures):
+            if self.player_actions[quadrant] != recent_gestures[0]:
+                self.player_actions[quadrant] = recent_gestures[0]
+
+                if quadrant not in self.player_quadrants and len(self.player_quadrants) < 2:
+                    self.player_quadrants.append(quadrant)
+
+            if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
+                self.resolve_exchange()
     
     def resolve_exchange(self):
         """

@@ -179,7 +179,7 @@ class BoxingViewer:
                     continue
                 
                 # Color alternates between red and blue for different hands
-                color = self.RED if i % 2 == 0 else self.BLUE
+                color = self.BLUE if i % 2 == 0 else self.RED
                 
                 # Draw different glove shapes based on gesture
                 if gesture == "rock":
@@ -332,7 +332,7 @@ def test_viewer():
             if np.random.random() < 0.1:
                 gestures[1] = np.random.choice(["rock", "paper", "scissors"])
                 
-            viewer.update_glove_data(positions, gestures)
+            
             time.sleep(0.1)
     finally:
         viewer.stop()
