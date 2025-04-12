@@ -16,7 +16,7 @@ def main():
     detector = HandDetector(min_detection_confidence=0.7)
     game = BoxingGame()
     ui = UIRenderer()
-    
+
     # Initialize the boxing viewer in a separate window
     viewer = BoxingViewer(width=800, height=600)
     viewer.start()
