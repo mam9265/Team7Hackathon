@@ -34,9 +34,13 @@ class BoxingViewer:
         # For freezing gestures
         self.is_frozen = False
         self.freeze_time = 0
-        self.freeze_duration = 0
+        self.freeze_duration = 3.0  # Default to 3 seconds
         self.frozen_positions = []
         self.frozen_gestures = []
+        
+        # Gesture completion tracking
+        self.both_gestures_detected = False
+        self.gesture_complete_time = 0
         
         # Mike Tyson sprite (create a placeholder for now)
         self.tyson_sprite = self._create_tyson_sprite()
@@ -169,10 +173,13 @@ class BoxingViewer:
             
             # If frozen, display a message about the frozen state
             if self.is_frozen:
-                remaining = int(self.freeze_duration - (time.time() - self.freeze_time))
+                remaining = max(0, int(self.freeze_duration - (time.time() - self.freeze_time)))
                 if remaining > 0:
                     cv2.putText(self.canvas, f"Final Gestures ({remaining}s)", 
                                (self.width//2 - 120, 50), self.font, 0.8, self.YELLOW, 2)
+                else:
+                    # Time is up, unfreeze
+                    self.is_frozen = False
             
             for i, (pos, gesture) in enumerate(zip(positions, gestures)):
                 if pos is None or gesture is None:
@@ -236,22 +243,40 @@ class BoxingViewer:
         display_duration: Optional time in seconds to keep this gesture displayed
         """
         with self.lock:
-            # Store current time if we want to freeze this gesture
+            # If a specific display duration is provided, use that
             if display_duration:
                 self.freeze_time = time.time()
                 self.freeze_duration = display_duration
                 self.frozen_positions = positions.copy() if isinstance(positions, list) else []
                 self.frozen_gestures = gestures.copy() if isinstance(gestures, list) else []
                 self.is_frozen = True
-            elif hasattr(self, 'is_frozen') and self.is_frozen:
+                return
+                
+            # Check if we're currently frozen
+            if self.is_frozen:
                 # Check if we should unfreeze
                 if time.time() - self.freeze_time >= self.freeze_duration:
                     self.is_frozen = False
+                    self.both_gestures_detected = False
                     self.glove_positions = positions
                     self.glove_gestures = gestures
                 # Otherwise keep using the frozen positions/gestures
+                return
+                
+            # Check if both hands have valid gestures
+            valid_gestures = [gesture for gesture in gestures if gesture in ["rock", "paper", "scissors"]]
+            
+            # If we have 2 valid gestures, freeze them for 3 seconds
+            if len(valid_gestures) >= 2 and not self.both_gestures_detected:
+                self.both_gestures_detected = True
+                self.gesture_complete_time = time.time()
+                self.freeze_time = time.time()
+                self.freeze_duration = 3.0  # Keep gestures for 3 seconds
+                self.frozen_positions = positions.copy() if isinstance(positions, list) else []
+                self.frozen_gestures = gestures.copy() if isinstance(gestures, list) else []
+                self.is_frozen = True
             else:
-                # Normal update
+                # Normal update if not frozen and not all gestures detected
                 self.glove_positions = positions
                 self.glove_gestures = gestures
     

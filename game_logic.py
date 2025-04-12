@@ -10,12 +10,6 @@ class BoxingGame:
         self.player_health = 100
         self.computer_health = 100
         
-        # Round tracking
-        self.current_round = 1
-        self.max_rounds = 5
-        self.player_rounds_won = 0
-        self.computer_rounds_won = 0
-        
         # State tracking
         self.game_state = "waiting"  # waiting, countdown, playing, round_end, game_over
         self.countdown_start = 0
@@ -25,7 +19,7 @@ class BoxingGame:
         self.gesture_history = {}  # {quadrant: [(gesture, timestamp)]}
         self.stable_gesture_time = 1.0  # Time in seconds a gesture must be stable
         
-        # Action tracking for current round
+        # Action tracking for current exchange
         self.player_actions = {0: None, 1: None, 2: None, 3: None}  # Quadrant: Gesture
         self.computer_actions = {0: None, 1: None, 2: None, 3: None}  # Quadrant: Gesture
         
@@ -40,9 +34,9 @@ class BoxingGame:
         # Gesture options
         self.gestures = ["rock", "paper", "scissors"]
         
-    def start_round(self):
+    def start_exchange(self):
         """
-        Start a new round by initializing countdown
+        Start a new exchange by initializing countdown
         """
         self.game_state = "countdown"
         self.countdown_start = time.time()
@@ -114,13 +108,13 @@ class BoxingGame:
                         if quadrant not in self.player_quadrants and len(self.player_quadrants) < 2:
                             self.player_quadrants.append(quadrant)
                         
-                        # Check if we have 2 player actions to resolve the round
+                        # Check if we have 2 player actions to resolve the exchange
                         if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
-                            self.resolve_round()
+                            self.resolve_exchange()
     
-    def resolve_round(self):
+    def resolve_exchange(self):
         """
-        Resolve the current round based on player and computer actions
+        Resolve the current exchange based on player and computer actions
         """
         # Save current gesture data for the viewer to display for 5 seconds
         self.frozen_gestures = [] 
@@ -168,11 +162,11 @@ class BoxingGame:
         self.damage_feedback["computer"] = computer_damage
         self.damage_time = time.time()
         
-        # Check if round is over due to KO
+        # Check if game is over due to KO
         if self.player_health == 0 or self.computer_health == 0:
-            self.end_round()
+            self.game_state = "game_over"
         else:
-            # Set timer for round end
+            # Set timer for exchange end
             self.game_state = "round_end"
             self.round_end_time = time.time()
         
@@ -181,38 +175,22 @@ class BoxingGame:
     
     def update_round_end(self):
         """
-        Update the round end state and prepare for the next round
+        Update the exchange end state and prepare for the next exchange
         """
         # Show results for 3 seconds
         if time.time() - self.round_end_time > 3:
-            self.end_round()
+            self.prepare_next_exchange()
     
-    def end_round(self):
+    def prepare_next_exchange(self):
         """
-        End the current round and update game state
+        Prepare for the next exchange
         """
-        # Determine round winner
-        if self.player_health < self.computer_health:
-            self.computer_rounds_won += 1
-        elif self.computer_health < self.player_health:
-            self.player_rounds_won += 1
-        # Equal health = tie round, no points
-        
-        # Check if game is over
-        if (self.player_rounds_won >= 3 or 
-            self.computer_rounds_won >= 3 or 
-            self.current_round >= self.max_rounds):
-            self.game_state = "game_over"
-        else:
-            # Reset for next round
-            self.current_round += 1
-            self.player_health = 100
-            self.computer_health = 100
-            self.player_actions = {0: None, 1: None, 2: None, 3: None}
-            self.computer_actions = {0: None, 1: None, 2: None, 3: None}
-            self.player_quadrants = []
-            self.computer_quadrants = []
-            self.game_state = "waiting"
+        # Reset for next exchange
+        self.player_actions = {0: None, 1: None, 2: None, 3: None}
+        self.computer_actions = {0: None, 1: None, 2: None, 3: None}
+        self.player_quadrants = []
+        self.computer_quadrants = []
+        self.game_state = "waiting"
     
     def reset_game(self):
         """

@@ -1,4 +1,3 @@
-
 import cv2
 import time
 import numpy as np
@@ -47,10 +46,6 @@ def main():
         
         # Draw health bars
         img = ui.draw_health_bars(img, game.player_health, game.computer_health)
-        
-        # Draw round info
-        img = ui.draw_round_info(img, game.current_round, game.max_rounds,
-                                game.player_rounds_won, game.computer_rounds_won)
         
         # Process game state
         countdown_value = None
@@ -121,9 +116,9 @@ def main():
         # Process key events
         key = cv2.waitKey(1) & 0xFF
         
-        # Space to start round
+        # Space to start exchange
         if key == 32 and game.game_state == "waiting":  # Spacebar
-            game.start_round()
+            game.start_exchange()
         
         # R to reset game
         if key == ord('r') and game.game_state == "game_over":
