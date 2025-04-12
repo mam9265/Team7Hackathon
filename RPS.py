@@ -26,7 +26,7 @@ def detect_hand_shape(landmarks):
 
 def main():
     mp_hands = mp.solutions.hands
-    hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
+    hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
     mp_draw = mp.solutions.drawing_utils
     cap = cv2.VideoCapture(0)
     
