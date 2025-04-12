@@ -47,6 +47,10 @@ class BoxingGame:
             pygame.mixer.Sound("Assets/Intro 5.wav"),
             pygame.mixer.Sound("Assets/Failed Intro.wav")
         ]
+
+        pygame.mixer.music.load("Assets/Big 10.wav")
+        pygame.mixer.music.set_volume(0.5)  # Optional: 0.0 to 1.0
+        pygame.mixer.music.play(-1)  # Loop forever
         
     def start_exchange(self):
         """
@@ -192,8 +196,12 @@ class BoxingGame:
         self.damage_time = time.time()
         
         # Check if game is over due to KO
-        if self.player_health == 0 or self.computer_health == 0:
+        if self.player_health == 0:
             self.game_state = "game_over"
+        elif self.computer_health == 0:
+            self.game_state = "Winner"
+        elif self.player_health == 0 and self.computer_health == 0:
+            self.game_state = "Tie"
         else:
             # Set timer for exchange end
             self.game_state = "round_end"
