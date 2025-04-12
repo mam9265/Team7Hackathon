@@ -155,7 +155,6 @@ class UIRenderer:
             cv2.putText(img, "Press 'R' to restart", 
                        (center_pos[0] - 150, center_pos[1] + 50), 
                        self.font, 1, self.WHITE, 2)
-        
         elif game_state == "Winner":
             cv2.putText(img, "YOU WIN!",
                        (center_pos[0] - 150, center_pos[1]), 

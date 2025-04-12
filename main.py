@@ -120,7 +120,7 @@ def main():
             game.start_exchange()
         
         # R to reset game
-        if key == ord('r') and game.game_state == "game_over":
+        if key == ord('r') and (game.game_state == "game_over" or game.game_state == "Winner"):
             game.reset_game()
         
         # ESC to quit
