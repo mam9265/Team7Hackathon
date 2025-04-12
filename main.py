@@ -1,9 +1,11 @@
+
 import cv2
 import time
 import numpy as np
 from hand_detector import HandDetector
 from game_logic import BoxingGame
 from ui_renderer import UIRenderer
+from boxing_viewer import BoxingViewer
 
 def main():
     # Initialize camera
@@ -16,6 +18,10 @@ def main():
     game = BoxingGame()
     ui = UIRenderer()
     
+    # Initialize the boxing viewer in a separate window
+    viewer = BoxingViewer(width=800, height=600)
+    viewer.start()
+    
     # Main loop
     while True:
         # Get image from camera
@@ -27,8 +33,12 @@ def main():
         # Flip image for selfie view
         img = cv2.flip(img, 1)
         
+
+          # Draw boxing ring background
+        
+
         # Find hands
-        img = detector.find_hands(img)
+        img = detector.find_hands(img, draw=False)
         
         # Get landmark positions for both hands
         lm_list1 = detector.find_position(img, hand_number=0)
@@ -57,6 +67,10 @@ def main():
         # Draw game state
         img = ui.draw_game_state(img, game.game_state, countdown_value)
         
+        # Extract hand position and gesture data for the viewer and game
+        glove_positions = []
+        glove_gestures = []
+        
         # Process gestures if game is in playing state
         if game.game_state == "playing":
             for i, lm_list in enumerate(hands):
@@ -71,6 +85,26 @@ def main():
                     
                     # Draw current gesture for debugging
                     img = ui.draw_current_gesture(img, gesture, quadrant)
+                    
+                    # Add hand data for the viewer
+                    if len(lm_list) >= 9:  # Make sure we have at least the palm landmark
+                        # Use the palm center for positioning the glove
+                        palm_x = (lm_list[0][1] + lm_list[9][1]) // 2
+                        palm_y = (lm_list[0][2] + lm_list[9][2]) // 2
+                        
+                        # Rescale coordinates to viewer dimensions
+                        viewer_x = int(palm_x * viewer.width / img.shape[1])
+                        viewer_y = int(palm_y * viewer.height / img.shape[0])
+                        
+                        glove_positions.append((viewer_x, viewer_y))
+                        glove_gestures.append(gesture)
+                else:
+                    # Add placeholders if hand not detected
+                    glove_positions.append(None)
+                    glove_gestures.append(None)
+                    
+        # Update the viewer with current hand data
+        viewer.update_glove_data(glove_positions, glove_gestures)
         
         # Draw player actions
         img = ui.draw_player_actions(img, game.player_actions, game.player_quadrants)
@@ -104,6 +138,7 @@ def main():
     
     # Clean up
     cap.release()
+    viewer.stop()  # Stop the boxing viewer thread
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
