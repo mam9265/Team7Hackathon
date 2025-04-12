@@ -240,8 +240,8 @@ class BoxingViewer:
             if display_duration:
                 self.freeze_time = time.time()
                 self.freeze_duration = display_duration
-                self.frozen_positions = positions.copy() if positions else []
-                self.frozen_gestures = gestures.copy() if gestures else []
+                self.frozen_positions = positions.copy() if isinstance(positions, list) else []
+                self.frozen_gestures = gestures.copy() if isinstance(gestures, list) else []
                 self.is_frozen = True
             elif hasattr(self, 'is_frozen') and self.is_frozen:
                 # Check if we should unfreeze

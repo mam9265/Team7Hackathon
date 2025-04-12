@@ -32,11 +32,6 @@ def main():
             
         # Flip image for selfie view
         img = cv2.flip(img, 1)
-        
-
-          # Draw boxing ring background
-        
-
         # Find hands
         img = detector.find_hands(img, draw=False)
         
