@@ -6,6 +6,7 @@ class UIRenderer:
         """
         Initialize the UI renderer
         """
+
         # Colors (BGR format)
         self.BLUE = (255, 0, 0)
         self.GREEN = (0, 255, 0)
@@ -155,6 +156,20 @@ class UIRenderer:
                        (center_pos[0] - 150, center_pos[1] + 50), 
                        self.font, 1, self.WHITE, 2)
         
+        elif game_state == "Winner":
+            cv2.putText(img, "YOU WIN!",
+                       (center_pos[0] - 150, center_pos[1]), 
+                       self.font, 2, self.RED, 4)
+            cv2.putText(img, "Press 'R' to Defend Your Title!", 
+                       (center_pos[0] - 150, center_pos[1] + 50), 
+                       self.font, 1, self.WHITE, 2)
+        elif game_state == "Tie":
+            cv2.putText(img, "A...Tie?",
+                       (center_pos[0] - 150, center_pos[1]),
+                       self.font, 2, self.RED, 4)
+            cv2.putText(img, "Press 'R' to Settle The Score!", 
+                       (center_pos[0] - 150, center_pos[1] + 50), 
+                       self.font, 1, self.WHITE, 2)
         return img
     
     def draw_player_actions(self, img, player_actions, player_quadrants):
@@ -190,7 +205,7 @@ class UIRenderer:
         Draw the computer's actions on the screen
         """
         # Only show computer actions when round is ended
-        if game_state not in ["round_end", "game_over"]:
+        if game_state not in ["round_end", "game_over", "Winner", "Tie"]:
             return img
         
         h, w = img.shape[:2]
@@ -346,7 +361,7 @@ class UIRenderer:
         h, w = img.shape[:2]
         
         # Only draw detailed opponent during active gameplay
-        if game_state not in ["countdown", "playing", "round_end", "game_over"]:
+        if game_state not in ["countdown", "playing", "round_end", "game_over", "Winner", "Tie"]:
             return img
             
         # Center position for the opponent (upper half of screen)
@@ -386,13 +401,13 @@ class UIRenderer:
         cv2.circle(img, (right_eye_pos[0], right_eye_pos[1]), eye_radius//2, (0, 0, 0), -1)
         
         # Expression based on game state and health
-        if game_state in ["playing", "countdown"]:
+        if game_state in ["playing", "countdown", "Tie"]:
             # Neutral expression
             cv2.line(img, 
                     (center_x - head_radius//2, center_y - body_height//2 + head_radius//2),
                     (center_x + head_radius//2, center_y - body_height//2 + head_radius//2),
                     (0, 0, 0), 2)
-        elif game_state == "round_end" or game_state == "game_over":
+        elif game_state == "round_end" or game_state == "game_over" or game_state == "Winner":
             if player_health > computer_health:
                 # Sad expression (downward curve)
                 pts = np.array([[center_x - head_radius//2, center_y - body_height//2 + head_radius//3],
@@ -422,7 +437,7 @@ class UIRenderer:
         
         # For non-end states, show the computer's hands in shadow/outline form
         # to represent that they're hidden but there
-        if game_state not in ["round_end", "game_over"]:
+        if game_state not in ["round_end", "game_over", "Winner"]:
             for q in computer_quadrants:
                 # Draw a ghost/shadow boxing glove
                 center = quadrant_centers[q]
