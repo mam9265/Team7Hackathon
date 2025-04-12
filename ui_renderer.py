@@ -22,6 +22,18 @@ class UIRenderer:
             "scissors": self.BLUE,
             None: self.WHITE
         }
+
+        self.player_gesture_images = {
+            "rock": cv2.imread("Assets/Rock (Jab).png", cv2.IMREAD_UNCHANGED),
+            "paper": cv2.imread("Assets/Paper (Block).png", cv2.IMREAD_UNCHANGED),
+            "scissors": cv2.imread("Assets/Scissors (Fake Out).png", cv2.IMREAD_UNCHANGED),
+        }
+
+        self.computer_gesture_images = {
+            "rock": cv2.imread("Assets/Op Rock.png", cv2.IMREAD_UNCHANGED),
+            "paper": cv2.imread("Assets/Op Paper.png", cv2.IMREAD_UNCHANGED),
+            "scissors": cv2.imread("Assets/Op Scissors.png", cv2.IMREAD_UNCHANGED),
+        }
         
         # Font settings
         self.font = cv2.FONT_HERSHEY_SIMPLEX
@@ -92,6 +104,23 @@ class UIRenderer:
         
         return img
     
+    def overlay_image(self, background, overlay, position):
+        x, y = position
+        h, w = overlay.shape[:2]
+
+        if overlay.shape[2] == 4:
+            # Split channels
+            b, g, r, a = cv2.split(overlay)
+            mask = cv2.merge((a, a, a))
+
+            roi = background[y:y+h, x:x+w]
+            img1_bg = cv2.bitwise_and(roi, 255 - mask)
+            img2_fg = cv2.bitwise_and(overlay[:, :, :3], mask)
+
+            dst = cv2.add(img1_bg, img2_fg)
+            background[y:y+h, x:x+w] = dst
+
+    
     def draw_game_state(self, img, game_state, countdown=None):
         """
         Draw the current game state information
@@ -138,15 +167,16 @@ class UIRenderer:
         # Highlight quadrants with player actions
         for q in player_quadrants:
             if player_actions[q] is not None:
-                # Draw a circle representing the gesture
-                color = self.gesture_colors[player_actions[q]]
-                cv2.circle(img, quadrant_centers[q], 50, color, -1)
-                cv2.circle(img, quadrant_centers[q], 50, self.WHITE, 2)
-                
-                # Draw gesture name
-                cv2.putText(img, player_actions[q], 
+                gesture_img = self.player_gesture_images.get(player_actions[q])
+                if gesture_img is not None:
+                # Resize image to fit nicely
+                    resized = cv2.resize(gesture_img, (100, 100))  # or adjust size as needed
+                    top_left = (quadrant_centers[q][0] - 50, quadrant_centers[q][1] - 50)
+                    self.overlay_image(img, resized, top_left)
+                    # Draw gesture name
+                    cv2.putText(img, player_actions[q], 
                            (quadrant_centers[q][0] - 40, quadrant_centers[q][1] + 5), 
-                           self.font, self.font_scale, self.BLACK, self.font_thickness)
+                           self.font, self.font_scale, self.WHITE, self.font_thickness)
         
         return img
     
@@ -169,16 +199,11 @@ class UIRenderer:
         # Draw computer actions
         for q in computer_quadrants:
             if computer_actions[q] is not None:
-                # Draw a rectangle representing the gesture
-                color = self.gesture_colors[computer_actions[q]]
-                cv2.rectangle(img, 
-                             (quadrant_centers[q][0] - 40, quadrant_centers[q][1] - 40),
-                             (quadrant_centers[q][0] + 40, quadrant_centers[q][1] + 40),
-                             color, -1)
-                cv2.rectangle(img, 
-                             (quadrant_centers[q][0] - 40, quadrant_centers[q][1] - 40),
-                             (quadrant_centers[q][0] + 40, quadrant_centers[q][1] + 40),
-                             self.WHITE, 2)
+                gesture_img = self.computer_gesture_images.get(computer_actions[q])
+                if gesture_img is not None:
+                    resized = cv2.resize(gesture_img, (100, 100))  # or adjust size as needed
+                    top_left = (quadrant_centers[q][0] - 50, quadrant_centers[q][1] - 50)
+                    self.overlay_image(img, resized, top_left)
                 
                 # Draw gesture name
                 cv2.putText(img, computer_actions[q], 
