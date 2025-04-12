@@ -6,6 +6,7 @@ class UIRenderer:
         """
         Initialize the UI renderer
         """
+
         # Colors (BGR format)
         self.BLUE = (255, 0, 0)
         self.GREEN = (0, 255, 0)

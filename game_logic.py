@@ -1,3 +1,4 @@
+import pygame
 import random
 import time
 
@@ -6,6 +7,9 @@ class BoxingGame:
         """
         Initialize the boxing game with default values
         """
+
+        pygame.mixer.init()
+
         # Player and computer health
         self.player_health = 100
         self.computer_health = 100
@@ -33,6 +37,16 @@ class BoxingGame:
         
         # Gesture options
         self.gestures = ["rock", "paper", "scissors"]
+
+        #Intro Sound Bytes
+        self.round_start_lines = [
+            pygame.mixer.Sound("Assets/Intro 1.wav"),
+            pygame.mixer.Sound("Assets/Intro 2.wav"),
+            pygame.mixer.Sound("Assets/Intro 3.wav"),
+            pygame.mixer.Sound("Assets/Intro 4.wav"),
+            pygame.mixer.Sound("Assets/Intro 5.wav"),
+            pygame.mixer.Sound("Assets/Failed Intro.wav")
+        ]
         
     def start_exchange(self):
         """
@@ -40,7 +54,12 @@ class BoxingGame:
         """
         self.game_state = "countdown"
         self.countdown_start = time.time()
-        
+
+    def play_random_round_start(self):
+        if hasattr(self, "round_start_lines") and self.round_start_lines:
+            line = random.choice(self.round_start_lines)
+            line.play()
+
     def update_countdown(self):
         """
         Update the countdown timer and change state if finished
@@ -50,11 +69,19 @@ class BoxingGame:
         remaining = 3 - int(elapsed)  # 3 second countdown
         
         if remaining <= 0:
+            if not hasattr(self, "round_start_played") or not self.round_start_played:
+                self.play_random_round_start()  # 🔊 Play audio cue
+                self.round_start_played = True
+
             self.game_state = "playing"
             self.select_computer_actions()
             return "GO!"
         
         return str(remaining)
+    
+    def prepare_next_exchange(self):
+        # ... other reset logic ...
+        self.round_start_played = False 
     
     def select_computer_actions(self):
         """
