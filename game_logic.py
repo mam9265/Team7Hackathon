@@ -88,7 +88,7 @@ class BoxingGame:
             ]
             
             # Check if the gesture has been stable for the required time
-            if len(self.gesture_history[quadrant]) >= 2:
+            if len(self.gesture_history[quadrant]) >= 1:
                 # Get all gestures in the last second
                 recent_gestures = [
                     g for g, t in self.gesture_history[quadrant] 
@@ -110,6 +110,7 @@ class BoxingGame:
                         
                         # Check if we have 2 player actions to resolve the exchange
                         if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
+                            
                             self.resolve_exchange()
     
     def resolve_exchange(self):
