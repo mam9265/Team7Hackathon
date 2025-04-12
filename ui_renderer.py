@@ -276,42 +276,7 @@ class UIRenderer:
         
         return img
     
-    def draw_gestures_guide(self, img):
-        """
-        Draw a guide for the gestures
-        """
-        h, w = img.shape[:2]
-        guide_w = 220
-        guide_h = 150
-        guide_x = w - guide_w - 10
-        guide_y = h - guide_h - 10
-        
-        # Background
-        cv2.rectangle(img, 
-                     (guide_x, guide_y), 
-                     (guide_x + guide_w, guide_y + guide_h), 
-                     self.BLACK, -1)
-        cv2.rectangle(img, 
-                     (guide_x, guide_y), 
-                     (guide_x + guide_w, guide_y + guide_h), 
-                     self.WHITE, 2)
-        
-        # Title
-        cv2.putText(img, "Gesture Guide", 
-                   (guide_x + 10, guide_y + 30), 
-                   self.font, self.font_scale, self.WHITE, self.font_thickness)
-        
-        # Gestures
-        y_offset = 60
-        gestures = ["rock", "paper", "scissors"]
-        for i, gesture in enumerate(gestures):
-            color = self.gesture_colors[gesture]
-            cv2.circle(img, (guide_x + 30, guide_y + y_offset + i*30), 15, color, -1)
-            cv2.putText(img, gesture, 
-                       (guide_x + 50, guide_y + y_offset + i*30 + 5), 
-                       self.font, self.font_scale, self.WHITE, self.font_thickness)
-        
-        return img
+    
         
     def draw_boxing_ring(self, img):
         """

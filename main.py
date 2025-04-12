@@ -111,7 +111,6 @@ def main():
         img = ui.draw_damage_indicators(img, game.damage_feedback, game.should_show_damage())
         
         # Draw gestures guide
-        img = ui.draw_gestures_guide(img)
         
         # Process key events
         key = cv2.waitKey(1) & 0xFF
