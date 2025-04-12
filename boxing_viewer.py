@@ -172,14 +172,7 @@ class BoxingViewer:
             gestures = self.frozen_gestures if self.is_frozen else self.glove_gestures
             
             # If frozen, display a message about the frozen state
-            if self.is_frozen:
-                remaining = max(0, int(self.freeze_duration - (time.time() - self.freeze_time)))
-                if remaining > 0:
-                    cv2.putText(self.canvas, f"Final Gestures ({remaining}s)", 
-                               (self.width//2 - 120, 50), self.font, 0.8, self.YELLOW, 2)
-                else:
-                    # Time is up, unfreeze
-                    self.is_frozen = False
+            
             
             for i, (pos, gesture) in enumerate(zip(positions, gestures)):
                 if pos is None or gesture is None:
@@ -193,11 +186,6 @@ class BoxingViewer:
                     # Fist-shaped glove
                     cv2.circle(self.canvas, pos, 40, color, -1)
                     cv2.circle(self.canvas, pos, 40, self.BLACK, 2)
-                    
-                    # Add thumb
-                    thumb_pos = (pos[0] - 25, pos[1] - 20)
-                    cv2.circle(self.canvas, thumb_pos, 15, color, -1)
-                    cv2.circle(self.canvas, thumb_pos, 15, self.BLACK, 2)
                     
                 elif gesture == "paper":
                     # Open hand glove
@@ -236,12 +224,6 @@ class BoxingViewer:
                         cv2.circle(self.canvas, finger_pos, 15, self.BLACK, 2)
     
     def update_glove_data(self, positions, gestures, display_duration=None):
-        """
-        Update the glove positions and gestures
-        positions: List of (x, y) tuples for glove positions
-        gestures: List of gesture strings ("rock", "paper", "scissors", or None)
-        display_duration: Optional time in seconds to keep this gesture displayed
-        """
         with self.lock:
             # If a specific display duration is provided, use that
             if display_duration:

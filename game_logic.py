@@ -107,10 +107,11 @@ class BoxingGame:
                         # Add to player quadrants if not already there
                         if quadrant not in self.player_quadrants and len(self.player_quadrants) < 2:
                             self.player_quadrants.append(quadrant)
+                            ##add time wait here
                         
                         # Check if we have 2 player actions to resolve the exchange
                         if len([q for q in self.player_quadrants if self.player_actions[q] is not None]) == 2:
-                            
+
                             self.resolve_exchange()
     
     def resolve_exchange(self):
